@@ -157,6 +157,13 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
         return pill(stack, tint: .white, alpha: 0.07, radius: 10, hPad: 12, vPad: 0)
     }
 
+    /// 引擎未就绪时显示「一键安装」, 就绪或安装中隐藏
+    private func installButton() -> NSButton {
+        let b = pillButton("一键安装", tint: purple.withAlphaComponent(0.85)) { installEngineFlow() }
+        refreshers.append { b.isHidden = rimeSession != 0 || EngineInstaller.busy || rimeApi != nil }
+        return b
+    }
+
     // MARK: - 组装
 
     private func build() {
@@ -194,7 +201,8 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
                 statusRow("辅助功能权限",
                           value: { accessibilityTrusted() ? ("已授权", .systemGreen) : ("未授权", .systemRed) },
                           button: pillButton("打开设置", tint: purple.withAlphaComponent(0.85)) { openAccessibilitySettings() }),
-                statusRow("拼音引擎", value: { (rimeStatus, rimeSession != 0 ? .systemGreen : textDim) }),
+                statusRow("拼音引擎", value: { (rimeStatus, rimeSession != 0 ? .systemGreen : textDim) },
+                          button: installButton()),
                 statusRow("UU 远控进程", value: {
                     remotePids.isEmpty ? ("未检测到", textDim)
                                        : ("已连接 (pid \(remotePids.sorted().map(String.init).joined(separator: ",")))", .systemGreen) }),

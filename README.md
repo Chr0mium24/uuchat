@@ -32,10 +32,7 @@ uuchat 把这些注入事件拦下来,各走各的:
 ## 安装
 
 1. 从 [Releases](../../releases/latest) 下载 `uuchat-x.y.z.dmg`(或 zip),把 **uuchat** 拖进「应用程序」
-2. 安装 [鼠鬚管 Squirrel](https://rime.im)(提供拼音引擎和词库;不装也能用,只是远端不能打中文):
-   ```bash
-   brew install --cask squirrel
-   ```
+2. **拼音引擎自动获取**:首次启动若没有引擎,会弹窗询问是否下载(约 25 MB)。它从 GitHub [rime/squirrel](https://github.com/rime/squirrel/releases) 官方发布页拉取安装包,**校验 Apple Developer ID 签名**后只解出 `librime` 和词库到 `~/Library/Application Support/uuchat/engine`,不会安装鼠鬚管输入法,也不需要管理员密码。之后也可以在 设置 → 运行状态 → 拼音引擎 点「一键安装」。已经装了鼠鬚管的话会直接复用,不用下载
 3. **首次打开**:App 没有 Apple 开发者签名(ad-hoc 签名),macOS 会拦。任选其一:
    - 右键 uuchat → 打开 → 打开
    - 或终端执行:`xattr -dr com.apple.quarantine /Applications/uuchat.app`
@@ -57,7 +54,7 @@ uuchat 把这些注入事件拦下来,各走各的:
 ## 工作原理
 
 - `CGEventTap`(HID 层, defaultTap)全局监听键鼠。事件里的 `kCGEventSourceUnixProcessID` 为 0 = 真实硬件,一律放行;等于 `UURemoteServer` 的 pid(自动发现)= 远端注入,按设置接管
-- **拼音**:运行时 `dlopen` 鼠鬚管自带的 `librime`(BSD),数据目录 `~/Library/Application Support/uuchat/rime-user`,默认简化字 `luna_pinyin_simp`;构建时不依赖 Squirrel
+- **拼音**:运行时 `dlopen` `librime`(BSD),优先用 uuchat 自己下载的引擎(`…/uuchat/engine`),其次系统里已装的鼠鬚管;用户词库在 `~/Library/Application Support/uuchat/rime-user`,默认简化字 `luna_pinyin_simp`;构建时不依赖 Squirrel
 - **鼠标(双光标)** 有几个实测出来的坑:
   - UU 不止发鼠标事件,还会**直接 warp 真光标**到远端位置(非事件,tap 拦不住);空闲时还以约 8Hz 注入"当前光标位置"的回声
   - 做法:自己维护主机光标位置 `hostPos`,每个远端事件后立刻 warp 回 `hostPos`;落在 `hostPos` 2px 内的远端事件视为回声,不覆盖紫光标;远端点击/滚轮在紫光标坐标 `CGEventPost` 补发后再 warp 回

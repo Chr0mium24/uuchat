@@ -8,10 +8,12 @@ var rimeApi: UnsafeMutablePointer<RimeApi>!
 var rimeStatus = "未初始化"
 
 private let rimeLibCandidates = [
+    EngineInstaller.dir + "/librime.1.dylib",
     "/Library/Input Methods/Squirrel.app/Contents/Frameworks/librime.1.dylib",
     NSHomeDirectory() + "/Library/Input Methods/Squirrel.app/Contents/Frameworks/librime.1.dylib",
 ]
 private let rimeSharedCandidates = [
+    EngineInstaller.dir + "/SharedSupport",
     "/Library/Input Methods/Squirrel.app/Contents/SharedSupport",
     NSHomeDirectory() + "/Library/Input Methods/Squirrel.app/Contents/SharedSupport",
 ]
@@ -27,9 +29,10 @@ private func loadRimeApi() -> UnsafeMutablePointer<RimeApi>? {
 
 func rimeInit() {
     guard let shared = rimeSharedCandidates.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
-        rimeStatus = "未找到鼠鬚管(Squirrel)"
-        appendLog(text: "未安装鼠鬚管,拼音组词不可用(远端只能直接输入英文/数字)。brew install --cask squirrel",
+        rimeStatus = "未安装(可一键安装)"
+        appendLog(text: "未找到拼音引擎,远端暂时只能直接输入英文/数字。可在设置里一键安装,或 brew install --cask squirrel",
                   color: .systemOrange, prefix: "🈶引擎")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { promptEngineInstall() }
         return
     }
     let user = NSHomeDirectory() + "/Library/Application Support/uuchat/rime-user"
